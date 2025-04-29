@@ -1,7 +1,8 @@
-package org.example.BotEvents.MessageRules;
+package cz.DiscordBot.BotEvents.MessageRules;
 
 import net.dv8tion.jda.api.utils.FileUpload;
-import org.example.Google.GooglePhotos;
+import cz.DiscordBot.Google.Exceptions.ImagesNotFoundException;
+import cz.DiscordBot.Google.GooglePhotos;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,7 +22,7 @@ public class AllPictures {
             }
             return files;
     }
-    public FileUpload uniquePicture(String server){
+    public FileUpload uniquePicture(String server) throws ImagesNotFoundException {
         return googlePhotos.getUniquePicture(server);
     }
 }

@@ -1,24 +1,20 @@
-package org.example.BotEvents;
+package cz.DiscordBot.BotEvents;
 
+import cz.DiscordBot.BotEvents.MessageRules.AllPictures;
+import cz.DiscordBot.Reactions;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import org.example.BotEvents.MessageRules.AllPictures;
-import org.example.Google.GooglePhotos;
+import cz.DiscordBot.Google.Exceptions.ImagesNotFoundException;
+import cz.DiscordBot.Google.GooglePhotos;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PhotoFromMessage extends ListenerAdapter {
-    public PhotoFromMessage() {
-        try {
-            googlePhotos = new GooglePhotos();
-        } catch (GeneralSecurityException | IOException e) {
-            throw new RuntimeException(e);
-        }
+    public PhotoFromMessage(GooglePhotos googlePhotos) {
+        this.googlePhotos=googlePhotos;
     }
 
     GooglePhotos googlePhotos;
@@ -26,6 +22,8 @@ public class PhotoFromMessage extends ListenerAdapter {
     Pattern pattern;
     Matcher matcher;
 
+
+    //todo Fotky neposílat jako samostatné zprávy, ale posílat jednu zprávu a na tu vytvořit vlákno, kde nahraju fotky.
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         super.onMessageReceived(event);
@@ -50,7 +48,17 @@ public class PhotoFromMessage extends ListenerAdapter {
                 System.out.println(event.getGuild().getName());
                 for (int i = 0; i < pointer; i++) {
                     event.getChannel().sendMessage("Posílám fotku číslo: " + (i + 1) + " z " + pointer + " fotek.").queue();
-                    event.getChannel().sendFiles(allPictures.uniquePicture(event.getGuild().getName())).queue();
+                    try{
+                        event.getChannel().sendFiles(allPictures.uniquePicture(event.getGuild().getName())).queue(sentMessage -> {
+                            // Přidání reakcí z pole
+                            for (String reaction : Reactions.REACTIONS) {
+                                sentMessage.addReaction(Emoji.fromFormatted(reaction)).queue();
+                            }
+                        });
+                   } catch (ImagesNotFoundException e) {
+                        event.getChannel().sendMessage(e.getMessage()).queue();
+                        break;
+                    }
                 }
 
                 //Zakomentované posílání fotek z listu fotek. Zanechané pro možnost použít v budoucnu.
